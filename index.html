@@ -1,0 +1,135 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Agente de Cotações de Frete</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; }
+    label { display: block; margin-top: 10px; }
+    input, select { padding: 8px; width: 100%; }
+    button { margin-top: 20px; padding: 10px 20px; }
+    .alert { padding: 10px; margin-top: 10px; border-radius: 5px; }
+    .red { background: #ffcccc; color: #a00; }
+    .yellow { background: #fff7cc; color: #a60; }
+    .green { background: #ccffcc; color: #060; }
+    .result { margin-top: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Agente de Cotações de Frete</h1>
+
+  <label>Valor da Nota Fiscal (R$)
+    <input type="number" id="valorNota" required />
+  </label>
+
+  <label>Peso da Carga (kg)
+    <input type="number" id="peso" required />
+  </label>
+
+  <label>Quantidade de Volumes
+    <input type="number" id="volumes" required />
+  </label>
+
+  <label>Altura (cm)
+    <input type="number" id="altura" required />
+  </label>
+
+  <label>Largura (cm)
+    <input type="number" id="largura" required />
+  </label>
+
+  <label>Comprimento (cm)
+    <input type="number" id="comprimento" required />
+  </label>
+
+  <label>CEP de Origem (SP)
+    <input type="text" id="cepOrigem" required />
+  </label>
+
+  <label>CEP de Destino (SP)
+    <input type="text" id="cepDestino" required />
+  </label>
+
+  <label>Deseja coleta?
+    <select id="coleta">
+      <option value="nao">Não</option>
+      <option value="sim">Sim</option>
+    </select>
+  </label>
+
+  <button onclick="calcularFrete()">Calcular Frete</button>
+
+  <div id="avisos"></div>
+  <div class="result" id="resultado"></div>
+
+  <script>
+    let cotacaoNumero = 1;
+
+    const tabelaTDA = {
+      "18000-000": 42.00,
+      "01000-000": 35.00,
+    };
+
+    function calcularFrete() {
+      const valorNota = parseFloat(document.getElementById('valorNota').value);
+      const peso = parseFloat(document.getElementById('peso').value);
+      const volumes = parseInt(document.getElementById('volumes').value);
+      const altura = parseFloat(document.getElementById('altura').value);
+      const largura = parseFloat(document.getElementById('largura').value);
+      const comprimento = parseFloat(document.getElementById('comprimento').value);
+      const cepOrigem = document.getElementById('cepOrigem').value;
+      const cepDestino = document.getElementById('cepDestino').value;
+      const coleta = document.getElementById('coleta').value;
+
+      const seguroCarga = Math.max(valorNota * 0.003, 9.00);
+      const tgr = Math.max(valorNota * 0.002, 8.33);
+      const seguroAgregado = Math.max(valorNota * 0.0015, 5.03);
+
+      const pesoCubado = (altura * largura * comprimento * volumes) / 300;
+      const pesoFinal = Math.max(peso, pesoCubado);
+      const fretePeso = pesoFinal * 0.38;
+
+      const despacho = 31.00;
+      const pedagio = Math.ceil(pesoFinal / 100) * 10.00;
+
+      const tda = tabelaTDA[cepDestino] || 40.00;
+
+      const valorColeta = coleta === 'sim' ? 25.00 : 0.00;
+
+      const subtotal = seguroCarga + tgr + seguroAgregado + fretePeso + despacho + pedagio + tda + valorColeta;
+      const totalComICMS = subtotal / 0.88;
+
+      const resultado = `
+        <strong>Número da Cotação:</strong> COT${String(cotacaoNumero).padStart(3, '0')}<br><br>
+        <strong>Subtotal:</strong> R$ ${subtotal.toFixed(2)}<br>
+        <strong>Total com ICMS:</strong> <b>R$ ${totalComICMS.toFixed(2)}</b><br><br>
+        <strong>Detalhamento:</strong><br>
+        Seguro da Carga: R$ ${seguroCarga.toFixed(2)}<br>
+        TGR: R$ ${tgr.toFixed(2)}<br>
+        Seguro Agregado: R$ ${seguroAgregado.toFixed(2)}<br>
+        Frete Peso (${pesoFinal.toFixed(2)} kg): R$ ${fretePeso.toFixed(2)}<br>
+        Despacho: R$ ${despacho.toFixed(2)}<br>
+        Pedágio: R$ ${pedagio.toFixed(2)}<br>
+        TDA: R$ ${tda.toFixed(2)}<br>
+        Coleta: R$ ${valorColeta.toFixed(2)}<br>
+      `;
+      document.getElementById('resultado').innerHTML = resultado;
+
+      const avisos = [];
+      if (pesoFinal > 1000) {
+        avisos.push(`<div class="alert red">⚠️ O peso está correto?</div>`);
+      }
+      if (altura >= 300 || largura >= 300 || comprimento >= 300) {
+        avisos.push(`<div class="alert yellow">⚠️ As medidas estão acima de 3 metros. Está correto?</div>`);
+      }
+      avisos.push(`<div class="alert green">✅ Verifique a possibilidade de um desconto com seu consultor.</div>`);
+
+      document.getElementById('avisos').innerHTML = avisos.join("");
+
+      cotacaoNumero++;
+    }
+  </script>
+</body>
+</html>
