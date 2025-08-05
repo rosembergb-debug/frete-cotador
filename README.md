@@ -1,0 +1,2 @@
+# frete-cotador
+COTAÇOES DO CONSULTOR ROSEMBERG SPO 
